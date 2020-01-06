@@ -1,4 +1,6 @@
 {
   "cache": "datastore",
-  "timeout": 12000
+  "timeout": 12000,
+  "width": 1125,
+  "height": 2463
 }
