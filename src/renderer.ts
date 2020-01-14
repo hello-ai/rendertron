@@ -90,7 +90,20 @@ export class Renderer {
       }
     });
 
+    // https://github.com/puppeteer/puppeteer/issues/1913
+    page.addListener("request", request => {
+      request._interceptionHandled = false;
+      // 画像とフォントのロードを待たないようにする
+      if (["image", "font"].includes(request.resourceType())) {
+        request.abort();
+      } else {
+        request.continue();
+      }
+    });
+
     try {
+      // https://github.com/puppeteer/puppeteer/issues/3811
+      await page.setRequestInterception(true);
       // Navigate to page. Wait until there are no oustanding network requests.
       response = await page.goto(
           requestUrl, {timeout: this.config.timeout, waitUntil: 'networkidle0'});
