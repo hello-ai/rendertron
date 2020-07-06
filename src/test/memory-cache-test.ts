@@ -35,6 +35,7 @@ app.use(cache.middleware());
 let handlerCalledCount = 0;
 
 test.before(async () => {
+  handlerCalledCount = 0;
   await cache.clearCache();
 });
 
@@ -50,27 +51,24 @@ const promiseTimeout = function (timeout: number) {
 };
 
 test('caches content and serves same content on cache hit', async (t) => {
-  let res = await server.get('/?basictest');
   const previousCount = handlerCalledCount;
+  let res = await server.get('/?basictest');
   t.is(res.status, 200);
-  t.is(res.text, 'Called ' + previousCount + ' times');
+  t.is(res.text, 'Called ' + (previousCount + 1) + ' times');
 
   // Workaround for race condition with writing to datastore.
   await promiseTimeout(500);
 
   res = await server.get('/?basictest');
   t.is(res.status, 200);
-  t.is(res.text, 'Called ' + previousCount + ' times');
+  t.is(res.text, 'Called ' + (previousCount + 1) + ' times');
   t.truthy(res.header['x-rendertron-cached']);
   t.true(new Date(res.header['x-rendertron-cached']) <= new Date());
 
   res = await server.get('/?basictest');
   t.is(res.status, 200);
-  t.is(res.text, 'Called ' + previousCount + ' times');
-
-  res = await server.get('/?basictest2');
-  t.is(res.status, 200);
   t.is(res.text, 'Called ' + (previousCount + 1) + ' times');
+
 });
 
 app.use(route.get('/set-header', (ctx: Koa.Context) => {
@@ -134,4 +132,58 @@ test('original status is preserved', async (t) => {
   // Non 200 status code should not be cached.
   res = await server.get('/status/400');
   t.is(res.status, 401);
+});
+
+test('cache entry can be removed', async (t) => {
+  let counter = 0;
+  app.use(route.get('/removalTest', (ctx: Koa.Context) => {
+    ctx.body = `Counter: ${++counter}`;
+  }));
+
+  let res = await server.get('/?cacheremovetest');
+  t.is(res.status, 200);
+  t.falsy(res.header['x-rendertron-cached']);
+  t.false(new Date(res.header['x-rendertron-cached']) <= new Date());
+
+  res = await server.get('/?cacheremovetest');
+
+  t.is(res.status, 200);
+  t.truthy(res.header['x-rendertron-cached']);
+  t.true(new Date(res.header['x-rendertron-cached']) <= new Date());
+
+  cache.removeEntry('/?cacheremovetest');
+  res = await server.get('/?cacheremovetest');
+  t.is(res.status, 200);
+  t.falsy(res.header['x-rendertron-cached']);
+  t.false(new Date(res.header['x-rendertron-cached']) <= new Date());
+
+  res = await server.get('/?cacheremovetest');
+  t.is(res.status, 200);
+  t.truthy(res.header['x-rendertron-cached']);
+  t.true(new Date(res.header['x-rendertron-cached']) <= new Date());
+});
+
+test('refreshCache refreshes cache', async (t) => {
+  let content = 'content';
+  app.use(route.get('/refreshTest', (ctx: Koa.Context) => {
+    ctx.body = content;
+  }));
+
+  let res = await server.get('/refreshTest');
+  t.is(res.status, 200);
+  t.is(res.text, 'content');
+
+  // Workaround for race condition with writing to datastore.
+  await promiseTimeout(500);
+
+  res = await server.get('/refreshTest');
+  t.truthy(res.header['x-rendertron-cached']);
+  t.is(res.text, 'content');
+
+  content = 'updated content';
+
+  res = await server.get('/refreshTest?refreshCache=true');
+  t.is(res.status, 200);
+  t.is(res.text, 'updated content');
+  t.is(res.header['x-rendertron-cached'], undefined);
 });
