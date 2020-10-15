@@ -2,5 +2,6 @@
   "cache": "datastore",
   "timeout": 12000,
   "width": 562,
-  "height": 1231
+  "height": 1231,
+  "puppeteerArgs": ["--no-sandbox", "--disable-dev-shm-usage"]
 }
