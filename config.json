@@ -3,5 +3,6 @@
   "timeout": 12000,
   "width": 562,
   "height": 1231,
-  "puppeteerArgs": ["--no-sandbox", "--disable-dev-shm-usage"]
+  "puppeteerArgs": ["--no-sandbox", "--disable-dev-shm-usage"],
+  "renderOnly": ["https://autoreserve.com", "https://tw.autoreserve.com", "https://cn.autoreserve.com", "https://hk.autoreserve.com"]
 }

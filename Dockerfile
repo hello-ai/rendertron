@@ -25,9 +25,10 @@ RUN apt-get update \
 
 
 WORKDIR /rendertron
-COPY . /rendertron
-
+COPY package.json /rendertron
 RUN npm install
+
+COPY . /rendertron
 RUN npm run build
 
 ENV NODE_ENV production
