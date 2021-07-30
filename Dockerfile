@@ -25,7 +25,7 @@ RUN apt-get update \
 
 
 WORKDIR /rendertron
-COPY package*.json /rendertron
+COPY package*.json /rendertron/
 RUN npm install
 
 COPY . /rendertron
