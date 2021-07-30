@@ -1,5 +1,5 @@
-import * as puppeteer from 'puppeteer';
-import * as url from 'url';
+import puppeteer, { ScreenshotOptions } from 'puppeteer';
+import url from 'url';
 import { dirname } from 'path';
 
 import { Config } from './config';
@@ -11,7 +11,8 @@ type SerializedResponse = {
 };
 
 type ViewportDimensions = {
-  width: number; height: number;
+  width: number;
+  height: number;
 };
 
 const MOBILE_USERAGENT =
@@ -37,18 +38,27 @@ export class Renderer {
       return true;
     }
 
+    if (this.config.restrictedUrlPattern && requestUrl.match(new RegExp(this.config.restrictedUrlPattern))) {
+      return true;
+    }
+
     return false;
   }
 
-  async serialize(requestUrl: string, isMobile: boolean):
-    Promise<SerializedResponse> {
+  async serialize(
+    requestUrl: string,
+    isMobile: boolean,
+    timezoneId?: string
+  ): Promise<SerializedResponse> {
     /**
      * Executed on the page after the page has loaded. Strips script and
      * import tags to prevent further loading of resources.
      */
     function stripPage() {
       // Strip only script tags that contain JavaScript (either no type attribute or one that contains "javascript")
-      const elements = document.querySelectorAll('script:not([type]), script[type*="javascript"], script[type="module"], link[rel=import]');
+      const elements = document.querySelectorAll(
+        'script:not([type]), script[type*="javascript"], script[type="module"], link[rel=import]'
+      );
       for (const e of Array.from(elements)) {
         e.remove();
       }
@@ -60,7 +70,6 @@ export class Renderer {
      * quality.
      */
     function injectBaseHref(origin: string, directory: string) {
-
       const bases = document.head.querySelectorAll('base');
       if (bases.length) {
         // Patch existing <base> if it is relative.
@@ -86,10 +95,28 @@ export class Renderer {
 
     // Page may reload when setting isMobile
     // https://github.com/GoogleChrome/puppeteer/blob/v1.10.0/docs/api.md#pagesetviewportviewport
-    await page.setViewport({ width: this.config.width, height: this.config.height, isMobile });
+    await page.setViewport({
+      width: this.config.width,
+      height: this.config.height,
+      isMobile,
+    });
 
     if (isMobile) {
       page.setUserAgent(MOBILE_USERAGENT);
+    }
+
+    if (timezoneId) {
+      try {
+        await page.emulateTimezone(timezoneId);
+      } catch (e) {
+        if (e.message.includes('Invalid timezone')) {
+          return {
+            status: 400,
+            customHeaders: new Map(),
+            content: 'Invalid timezone id',
+          };
+        }
+      }
     }
 
     await page.setExtraHTTPHeaders(this.config.reqHeaders);
@@ -100,7 +127,7 @@ export class Renderer {
 
     await page.setRequestInterception(true);
 
-    page.addListener('request', (interceptedRequest: puppeteer.Request) => {
+    page.on('request', (interceptedRequest: puppeteer.HTTPRequest) => {
       if (this.restrictRequest(interceptedRequest.url())) {
         interceptedRequest.abort();
       } else {
@@ -108,12 +135,12 @@ export class Renderer {
       }
     });
 
-    let response: puppeteer.Response | null = null;
+    let response: puppeteer.HTTPResponse | null = null;
     // Capture main frame response. This is used in the case that rendering
     // times out, which results in puppeteer throwing an error. This allows us
     // to return a partial response for what was able to be rendered in that
     // time frame.
-    page.addListener('response', (r: puppeteer.Response) => {
+    page.on('response', (r: puppeteer.HTTPResponse) => {
       if (!response) {
         response = r;
       }
@@ -134,8 +161,10 @@ export class Renderer {
       // https://github.com/puppeteer/puppeteer/issues/3811
       await page.setRequestInterception(true);
       // Navigate to page. Wait until there are no oustanding network requests.
-      response = await page.goto(
-        requestUrl, { timeout: this.config.timeout, waitUntil: 'networkidle0' });
+      response = await page.goto(requestUrl, {
+        timeout: this.config.timeout,
+        waitUntil: 'networkidle0',
+      });
     } catch (e) {
       console.error(e);
     }
@@ -145,6 +174,9 @@ export class Renderer {
       // This should only occur when the page is about:blank. See
       // https://github.com/GoogleChrome/puppeteer/blob/v1.5.0/docs/api.md#pagegotourl-options.
       await page.close();
+      if (this.config.closeBrowser) {
+        await this.browser.close();
+      }
       return { status: 400, customHeaders: new Map(), content: '' };
     }
 
@@ -152,6 +184,9 @@ export class Renderer {
     // https://cloud.google.com/compute/docs/storing-retrieving-metadata.
     if (response.headers()['metadata-flavor'] === 'Google') {
       await page.close();
+      if (this.config.closeBrowser) {
+        await this.browser.close();
+      }
       return { status: 403, customHeaders: new Map(), content: '' };
     }
 
@@ -159,12 +194,11 @@ export class Renderer {
     // name="render:status_code" content="4xx" /> tag which overrides the status
     // code.
     let statusCode = response.status();
-    const newStatusCode =
-      await page
-        .$eval(
-          'meta[name="render:status_code"]',
-          (element) => parseInt(element.getAttribute('content') || ''))
-        .catch(() => undefined);
+    const newStatusCode = await page
+      .$eval('meta[name="render:status_code"]', (element) =>
+        parseInt(element.getAttribute('content') || '')
+      )
+      .catch(() => undefined);
     // On a repeat visit to the same origin, browser cache is enabled, so we may
     // encounter a 304 Not Modified. Instead we'll treat this as a 200 OK.
     if (statusCode === 304) {
@@ -179,47 +213,64 @@ export class Renderer {
     // Check for <meta name="render:header" content="key:value" /> tag to allow a custom header in the response
     // to the crawlers.
     const customHeaders = await page
-      .$eval(
-        'meta[name="render:header"]',
-        (element) => {
-          const result = new Map<string, string>();
-          const header = element.getAttribute('content');
-          if (header) {
-            const i = header.indexOf(':');
-            if (i !== -1) {
-              result.set(
-                header.substr(0, i).trim(),
-                header.substring(i + 1).trim());
-            }
+      .$eval('meta[name="render:header"]', (element) => {
+        const result = new Map<string, string>();
+        const header = element.getAttribute('content');
+        if (header) {
+          const i = header.indexOf(':');
+          if (i !== -1) {
+            result.set(
+              header.substr(0, i).trim(),
+              header.substring(i + 1).trim()
+            );
           }
-          return JSON.stringify([...result]);
-        })
+        }
+        return JSON.stringify([...result]);
+      })
       .catch(() => undefined);
 
     // Remove script & import tags.
     await page.evaluate(stripPage);
     // Inject <base> tag with the origin of the request (ie. no path).
     const parsedUrl = url.parse(requestUrl);
-    await page.evaluate(injectBaseHref, `${parsedUrl.protocol}//${parsedUrl.host}`, `${dirname(parsedUrl.pathname || '')}`);
+    await page.evaluate(
+      injectBaseHref,
+      `${parsedUrl.protocol}//${parsedUrl.host}`,
+      `${dirname(parsedUrl.pathname || '')}`
+    );
 
     // Serialize page.
-    const result = await page.content() as string;
+    const result = (await page.content()) as string;
 
     await page.close();
-    return { status: statusCode, customHeaders: customHeaders ? new Map(JSON.parse(customHeaders)) : new Map(), content: result };
+    if (this.config.closeBrowser) {
+      await this.browser.close();
+    }
+    return {
+      status: statusCode,
+      customHeaders: customHeaders
+        ? new Map(JSON.parse(customHeaders))
+        : new Map(),
+      content: result,
+    };
   }
 
   async screenshot(
     url: string,
     isMobile: boolean,
     dimensions: ViewportDimensions,
-    options?: object): Promise<Buffer> {
+    options?: ScreenshotOptions,
+    timezoneId?: string
+  ): Promise<Buffer> {
     const page = await this.browser.newPage();
 
     // Page may reload when setting isMobile
     // https://github.com/GoogleChrome/puppeteer/blob/v1.10.0/docs/api.md#pagesetviewportviewport
-    await page.setViewport(
-      { width: dimensions.width, height: dimensions.height, isMobile });
+    await page.setViewport({
+      width: dimensions.width,
+      height: dimensions.height,
+      isMobile,
+    });
 
     if (isMobile) {
       page.setUserAgent(MOBILE_USERAGENT);
@@ -227,7 +278,7 @@ export class Renderer {
 
     await page.setRequestInterception(true);
 
-    page.addListener('request', (interceptedRequest: puppeteer.Request) => {
+    page.addListener('request', (interceptedRequest: puppeteer.HTTPRequest) => {
       if (this.restrictRequest(interceptedRequest.url())) {
         interceptedRequest.abort();
       } else {
@@ -235,35 +286,52 @@ export class Renderer {
       }
     });
 
-    let response: puppeteer.Response | null = null;
+    if (timezoneId) {
+      await page.emulateTimezone(timezoneId);
+    }
+
+    let response: puppeteer.HTTPResponse | null = null;
 
     try {
       // Navigate to page. Wait until there are no oustanding network requests.
-      response =
-        await page.goto(url, { timeout: this.config.timeout, waitUntil: 'networkidle0' });
+      response = await page.goto(url, {
+        timeout: this.config.timeout,
+        waitUntil: 'networkidle0',
+      });
     } catch (e) {
       console.error(e);
     }
 
     if (!response) {
       await page.close();
+      if (this.config.closeBrowser) {
+        await this.browser.close();
+      }
       throw new ScreenshotError('NoResponse');
     }
 
     // Disable access to compute metadata. See
     // https://cloud.google.com/compute/docs/storing-retrieving-metadata.
-    if (response!.headers()['metadata-flavor'] === 'Google') {
+    if (response.headers()['metadata-flavor'] === 'Google') {
       await page.close();
+      if (this.config.closeBrowser) {
+        await this.browser.close();
+      }
       throw new ScreenshotError('Forbidden');
     }
 
     // Must be jpeg & binary format.
-    const screenshotOptions =
-      Object.assign({}, options, { type: 'jpeg', encoding: 'binary' });
+    const screenshotOptions: ScreenshotOptions = {
+      type: options?.type || 'jpeg',
+      encoding: options?.encoding || 'binary',
+    };
     // Screenshot returns a buffer based on specified encoding above.
     // https://github.com/GoogleChrome/puppeteer/blob/v1.8.0/docs/api.md#pagescreenshotoptions
-    const buffer = await page.screenshot(screenshotOptions) as Buffer;
+    const buffer = (await page.screenshot(screenshotOptions)) as Buffer;
     await page.close();
+    if (this.config.closeBrowser) {
+      await this.browser.close();
+    }
     return buffer;
   }
 }
