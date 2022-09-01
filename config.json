@@ -7,5 +7,5 @@
     "cacheMaxEntries": -1
   },
   "puppeteerArgs": ["--no-sandbox", "--disable-dev-shm-usage"],
-  "renderOnly": ["https://autoreserve.com", "https://tw.autoreserve.com", "https://cn.autoreserve.com", "https://hk.autoreserve.com", "https://web.autoreserve.com", "https://auto-reserve-web.vercel.app"]
+  "restrictedUrlPattern": "^https://(\\w+\\.)?autoreserve\\.com/|^https://auto-reserve-(.*)-hello-ai1.vercel.app/"
 }
