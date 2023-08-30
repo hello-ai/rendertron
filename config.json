@@ -1,6 +1,6 @@
 {
   "cache": "datastore",
-  "timeout": 12000,
+  "timeout": 20000,
   "width": 562,
   "height": 1231,
   "cacheConfig": {
