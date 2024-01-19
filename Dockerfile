@@ -43,8 +43,7 @@ RUN apt-get update && \
    && rm -rf /var/lib/apt/lists/*
 
 # WORKAROUND: https://github.com/CircleCI-Public/browser-tools-orb/issues/75#issuecomment-1640923560
-#ARG CHROME_VERSION="114.0.5735.198-1"
-ARG CHROME_VERSION="105.0.5195.52-1"
+ARG CHROME_VERSION="114.0.5735.198-1"
 RUN wget --no-check-certificate --no-verbose -O /tmp/chrome.deb https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${CHROME_VERSION}_amd64.deb \
   && apt install -y /tmp/chrome.deb \
   && rm /tmp/chrome.deb
