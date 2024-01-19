@@ -4,43 +4,49 @@ FROM node:12-bullseye-slim
 # Note: this installs the necessary libs to make the bundled version of Chromium that Puppeteer
 # installs, work.
 RUN apt-get update && \
-    apt-get install -y wget gnupg && \
-    wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
-    sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' && \
-    apt-get update && \
-    apt-get install -y \
-      wget \
-      gnupg \
-      libxshmfence1 \
-      libglu1 \
-      fonts-ipafont-gothic \
-      fonts-wqy-zenhei \
-      fonts-thai-tlwg \
-      fonts-kacst \
-      fonts-freefont-ttf \
-      libxss1 \
-      libxtst6 \
-      ca-certificates \
-      fonts-liberation \
-      libasound2 \
-      libatk-bridge2.0-0 \
-      libcairo2 \
-      libcups2 \
-      libcurl3-gnutls \
-      libcurl3-nss \
-      libcurl4 \
-      libgbm1 \
-      libgtk-3-0 \
-      libnspr4 \
-      libnss3 \
-      libpango-1.0-0 \
-      libwayland-client0 \
-      libxcomposite1 \
-      libxkbcommon0 \
-      libxrandr2 \
-      xdg-utils \
-   --no-install-recommends \
-   && rm -rf /var/lib/apt/lists/*
+  apt-get install -y wget gnupg && \
+  wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
+  sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' && \
+  apt-get update && \
+  apt-get install -y \
+  wget \
+  gnupg \
+  libxshmfence1 \
+  libglu1 \
+  fonts-ipafont-gothic \
+  fonts-wqy-zenhei \
+  fonts-thai-tlwg \
+  fonts-kacst \
+  fonts-freefont-ttf \
+  libxss1 \
+  libxtst6 \
+  ca-certificates \
+  fonts-liberation \
+  libasound2 \
+  libatk-bridge2.0-0 \
+  libcairo2 \
+  libcups2 \
+  libcurl3-gnutls \
+  libcurl3-nss \
+  libcurl4 \
+  libgbm1 \
+  libgtk-3-0 \
+  libnspr4 \
+  libnss3 \
+  libpango-1.0-0 \
+  libwayland-client0 \
+  libxcomposite1 \
+  libxkbcommon0 \
+  libxrandr2 \
+  xdg-utils \
+  --no-install-recommends \
+  && rm -rf /var/lib/apt/lists/*
+
+# https://stackoverflow.com/questions/75251315/dependency-issue-installing-google-chrome-stable-through-ubuntu-docker
+RUN wget --no-check-certificate --no-verbose http://archive.ubuntu.com/ubuntu/pool/main/libu/libu2f-host/libu2f-udev_1.1.4-1_all.deb \
+  && apt update \
+  && apt install -y ./libu2f-udev_1.1.4-1_all.deb \
+  && rm ./libu2f-udev_1.1.4-1_all.deb
 
 # WORKAROUND: https://github.com/CircleCI-Public/browser-tools-orb/issues/75#issuecomment-1640923560
 ARG CHROME_VERSION="114.0.5735.198-1"
