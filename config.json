@@ -1,11 +1,7 @@
 {
-  "cache": "datastore",
   "timeout": 20000,
   "width": 562,
   "height": 1231,
-  "cacheConfig": {
-    "cacheMaxEntries": -1
-  },
   "puppeteerArgs": ["--no-sandbox", "--disable-dev-shm-usage"],
   "renderOnly": ["https://autoreserve.com", "https://tw.autoreserve.com", "https://cn.autoreserve.com", "https://hk.autoreserve.com", "https://staging.autoreserve.com", "https://auto-reserve-"]
 }
