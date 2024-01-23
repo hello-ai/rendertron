@@ -1,5 +1,5 @@
 {
-  "timeout": 30000,
+  "timeout": 20000,
   "width": 562,
   "height": 1231,
   "puppeteerArgs": ["--no-sandbox", "--disable-dev-shm-usage"],
