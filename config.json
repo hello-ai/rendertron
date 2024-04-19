@@ -1,7 +1,12 @@
 {
   "timeout": 20000,
   "width": 562,
-  "height": 1231,
-  "puppeteerArgs": ["--no-sandbox", "--disable-dev-shm-usage"],
-  "renderOnly": ["https://autoreserve.com", "https://tw.autoreserve.com", "https://cn.autoreserve.com", "https://hk.autoreserve.com", "https://staging.autoreserve.com", "https://auto-reserve-"]
+  "height": 12310,
+  "puppeteerArgs": [
+    "--no-sandbox",
+    "--disable-dev-shm-usage",
+    "--user-data-dir=/tmp/user-data"
+  ],
+  "renderOnly": ["https://autoreserve.com", "https://staging.autoreserve.com", "https://auto-reserve-"],
+  "restrictedUrlPattern": "(www\\.googletagmanager\\.com|www\\.google-analytics\\.com|static\\.cloudflareinsights\\.com|sentry\\.io)"
 }
