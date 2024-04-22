@@ -146,15 +146,15 @@ export class Renderer {
       }
     });
 
-    // https://github.com/puppeteer/puppeteer/issues/1913
-    page.addListener("request", request => {
+    // https://developer.chrome.com/docs/puppeteer/ssr/#optimizations
+    page.on("request", request => {
       request._interceptionHandled = false;
-      // 画像とフォントのロードを待たないようにする
-      if (["image", "font"].includes(request.resourceType())) {
-        request.abort();
-      } else {
-        request.continue();
+      const allowlist = ['document', 'script', 'xhr', 'fetch'];
+      if (!allowlist.includes(request.resourceType())) {
+        return request.abort();
       }
+
+      request.continue();
     });
 
     try {
@@ -163,7 +163,7 @@ export class Renderer {
       // Navigate to page. Wait until there are no oustanding network requests.
       response = await page.goto(requestUrl, {
         timeout: this.config.timeout,
-        waitUntil: 'networkidle0',
+        waitUntil: 'networkidle2',
       });
     } catch (e) {
       console.error(e);
@@ -296,7 +296,7 @@ export class Renderer {
       // Navigate to page. Wait until there are no oustanding network requests.
       response = await page.goto(url, {
         timeout: this.config.timeout,
-        waitUntil: 'networkidle0',
+        waitUntil: 'networkidle2',
       });
     } catch (e) {
       console.error(e);
