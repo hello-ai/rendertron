@@ -240,11 +240,15 @@ export class Renderer {
     if (this.config.closeBrowser) {
       await this.browser.close();
     }
+    const headers = customHeaders
+      ? new Map(JSON.parse(customHeaders))
+      : new Map();
+
+    headers.set('cloudflare-cdn-cache-control', 'max-age=60');
+
     return {
       status: statusCode,
-      customHeaders: customHeaders
-        ? new Map(JSON.parse(customHeaders))
-        : new Map(),
+      customHeaders: headers,
       content: result,
     };
   }
