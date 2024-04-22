@@ -129,10 +129,16 @@ export class Renderer {
 
     page.on('request', (interceptedRequest: puppeteer.HTTPRequest) => {
       if (this.restrictRequest(interceptedRequest.url())) {
-        interceptedRequest.abort();
-      } else {
-        interceptedRequest.continue();
+        return interceptedRequest.abort();
       }
+
+      // https://developer.chrome.com/docs/puppeteer/ssr/#optimizations
+      const allowlist = ['document', 'script', 'xhr', 'fetch', 'other'];
+      if (!allowlist.includes(interceptedRequest.resourceType())) {
+        return interceptedRequest.abort();
+      }
+
+      interceptedRequest.continue();
     });
 
     let response: puppeteer.HTTPResponse | null = null;
@@ -146,20 +152,7 @@ export class Renderer {
       }
     });
 
-    // https://developer.chrome.com/docs/puppeteer/ssr/#optimizations
-    page.on("request", request => {
-      request._interceptionHandled = false;
-      const allowlist = ['document', 'script', 'xhr', 'fetch'];
-      if (!allowlist.includes(request.resourceType())) {
-        return request.abort();
-      }
-
-      request.continue();
-    });
-
     try {
-      // https://github.com/puppeteer/puppeteer/issues/3811
-      await page.setRequestInterception(true);
       // Navigate to page. Wait until there are no oustanding network requests.
       response = await page.goto(requestUrl, {
         timeout: this.config.timeout,
