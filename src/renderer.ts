@@ -170,7 +170,8 @@ export class Renderer {
       if (this.config.closeBrowser) {
         await this.browser.close();
       }
-      return { status: 400, customHeaders: new Map(), content: '' };
+      // 400エラーを返すとインデックスを削除されるリスクがあるので、500エラーを返す
+      return { status: 500, customHeaders: new Map(), content: '' };
     }
 
     // Disable access to compute metadata. See
