@@ -244,7 +244,7 @@ export class Renderer {
       ? new Map(JSON.parse(customHeaders))
       : new Map();
 
-    headers.set('cloudflare-cdn-cache-control', 'max-age=60');
+    headers.set('cloudflare-cdn-cache-control', 'max-age=1800');
 
     return {
       status: statusCode,
