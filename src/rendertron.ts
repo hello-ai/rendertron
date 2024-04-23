@@ -64,6 +64,7 @@ export class Rendertron {
       // }
       const logEntry = {
         severity: 'INFO',
+        message: `${ctx.method} ${ctx.url} - ${ms}ms`,
         httpRequest: {
           requestMethod: ctx.method,
           requestUrl: ctx.url,
