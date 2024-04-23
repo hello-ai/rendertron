@@ -45,15 +45,34 @@ export class Rendertron {
       await next();
       const ms = Date.now() - start;
 
+      // {
+      //   "requestMethod": string,
+      //   "requestUrl": string,
+      //   "requestSize": string,
+      //   "status": integer,
+      //   "responseSize": string,
+      //   "userAgent": string,
+      //   "remoteIp": string,
+      //   "serverIp": string,
+      //   "referer": string,
+      //   "latency": string,
+      //   "cacheLookup": boolean,
+      //   "cacheHit": boolean,
+      //   "cacheValidatedWithOriginServer": boolean,
+      //   "cacheFillBytes": string,
+      //   "protocol": string
+      // }
       const logEntry = {
         severity: 'INFO',
         httpRequest: {
           requestMethod: ctx.method,
           requestUrl: ctx.url,
+          protocol: "HTTP/1.1",
           status: ctx.status,
           userAgent: ctx.get('User-Agent'),
-          responseSize: ctx.length,
+          responseSize: ctx.length ? ctx.length.toString() : '-',
           remoteIp: ctx.ip,
+          serverIp: "",
           latency: `${ms}ms`,
         },
       }
