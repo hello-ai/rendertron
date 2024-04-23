@@ -3,7 +3,6 @@ import bodyParser from 'koa-bodyparser';
 import koaCompress from 'koa-compress';
 import route from 'koa-route';
 import koaSend from 'koa-send';
-import koaLogger from 'koa-logger';
 import path from 'path';
 import puppeteer from 'puppeteer';
 import url from 'url';
@@ -41,7 +40,25 @@ export class Rendertron {
 
     await this.createRenderer(this.config);
 
-    this.app.use(koaLogger());
+    this.app.use(async function logger(ctx, next) {
+      const start = Date.now();
+      await next();
+      const ms = Date.now() - start;
+
+      const logEntry = {
+        severity: 'INFO',
+        httpRequest: {
+          requestMethod: ctx.method,
+          requestUrl: ctx.url,
+          status: ctx.status,
+          userAgent: ctx.get('User-Agent'),
+          responseSize: ctx.length,
+          remoteIp: ctx.ip,
+          latency: `${ms}ms`,
+        },
+      }
+      console.log(JSON.stringify(logEntry));
+    });
 
     this.app.use(koaCompress());
 
