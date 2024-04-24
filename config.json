@@ -1,5 +1,5 @@
 {
-  "timeout": 20000,
+  "timeout": 10000,
   "width": 562,
   "height": 1231,
   "puppeteerArgs": [
