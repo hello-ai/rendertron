@@ -11,7 +11,7 @@
   "types": "build/rendertron.d.ts",
   "bin": "bin/rendertron",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run sentry:sourcemaps",
     "prepack": "npm run build",
     "start": "pm2-runtime build/rendertron.js -i max",
     "format": "npm run format:eslint && npm run format:prettier",
@@ -22,7 +22,8 @@
     "monitor-inspect": "nodemon --inspect src/main.js",
     "test": "(cd test-resources && npm install) && npm run build && ava build/test/app-test.js --timeout 5s",
     "start-emulator": "(gcloud beta emulators datastore start --no-store-on-disk --project emulator-project --host-port localhost:8380 &) 2>&1 | grep -m1 'now running'",
-    "test-cache": "npm run build && npm run start-emulator && $(gcloud beta emulators datastore env-init) && export GCLOUD_PROJECT=emulator-project && ava build/test/*-cache-test.js"
+    "test-cache": "npm run build && npm run start-emulator && $(gcloud beta emulators datastore env-init) && export GCLOUD_PROJECT=emulator-project && ava build/test/*-cache-test.js",
+    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org hello-inc --project rendertron ./build && sentry-cli sourcemaps upload --org hello-inc --project rendertron ./build"
   },
   "files": [
     "bin/",
@@ -31,6 +32,7 @@
     "app.json"
   ],
   "dependencies": {
+    "@sentry/cli": "^2.31.0",
     "@sentry/node": "^7.112.2",
     "@webcomponents/webcomponentsjs": "^2.5.0",
     "chrome-launcher": "^0.13.4",
