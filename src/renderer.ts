@@ -3,6 +3,7 @@ import url from 'url';
 import { dirname } from 'path';
 
 import { Config } from './config';
+import * as Sentry from '@sentry/node';
 
 type SerializedResponse = {
   status: number;
@@ -160,16 +161,16 @@ export class Renderer {
       });
     } catch (e) {
       console.error(e);
+      Sentry.captureException(e);
     }
 
     if (!response) {
-      console.error('response does not exist');
       // This should only occur when the page is about:blank. See
       // https://github.com/GoogleChrome/puppeteer/blob/v1.5.0/docs/api.md#pagegotourl-options.
+      // ブラウザプロセスがおかしい可能性があるので、ブラウザを閉じる
       await page.close();
-      if (this.config.closeBrowser) {
-        await this.browser.close();
-      }
+      await this.browser.close();
+
       // 400エラーを返すとインデックスを削除されるリスクがあるので、500エラーを返す
       return { status: 500, customHeaders: new Map(), content: '' };
     }
