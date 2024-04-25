@@ -70,6 +70,8 @@ WORKDIR /rendertron
 COPY package*.json /rendertron/
 RUN npm install
 
+ENV SENTRY_AUTH_TOKEN=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
+
 COPY . /rendertron
 RUN npm run build
 
