@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/node"
+
 import Koa from 'koa';
 import bodyParser from 'koa-bodyparser';
 import koaCompress from 'koa-compress';
@@ -37,6 +39,21 @@ export class Rendertron {
 
     this.port = this.port || this.config.port;
     this.host = this.host || this.config.host;
+
+    Sentry.init({
+      dsn: "https://3f85c26488542396041c771887f4aecb@o184288.ingest.us.sentry.io/4507145852551168",
+      integrations: [],
+    });
+
+    // Send errors to Sentry
+    this.app.on("error", (err, ctx) => {
+      Sentry.withScope((scope) => {
+        scope.addEventProcessor((event) => {
+          return Sentry.addRequestDataToEvent(event, ctx.request);
+        });
+        Sentry.captureException(err);
+      });
+    });
 
     await this.createRenderer(this.config);
 
