@@ -42,6 +42,7 @@ export class Rendertron {
 
     Sentry.init({
       dsn: "https://3f85c26488542396041c771887f4aecb@o184288.ingest.us.sentry.io/4507145852551168",
+      environment: process.env.NODE_ENV || "development",
       integrations: [],
     });
 
