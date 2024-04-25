@@ -62,15 +62,25 @@ export class Rendertron {
       //   "cacheFillBytes": string,
       //   "protocol": string
       // }
+      const userAgent = ctx.get('User-Agent');
+      const botPatterns = [
+        /Googlebot/i,
+        /bingbot/i,
+        /YandexBot/i,
+        /Baiduspider/i,
+      ]
+      const matchedBotPattern = botPatterns.find(pattern => pattern.test(userAgent))
+      const userAgentLabel = matchedBotPattern ? matchedBotPattern.source : userAgent
+
       const logEntry = {
         severity: 'INFO',
-        message: `${ctx.method} ${ctx.url} - ${ms}ms`,
+        message: `${ctx.method} ${ctx.url} - ${ms}ms - ${userAgentLabel}`,
         httpRequest: {
           requestMethod: ctx.method,
           requestUrl: ctx.url,
           protocol: "HTTP/1.1",
           status: ctx.status,
-          userAgent: ctx.get('User-Agent'),
+          userAgent: userAgent,
           responseSize: ctx.length ? ctx.length.toString() : '-',
           remoteIp: ctx.ip,
           serverIp: "",
