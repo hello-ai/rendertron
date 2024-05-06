@@ -153,8 +153,6 @@ export class Renderer {
       }
     });
 
-    let isBrowserError = false;
-
     try {
       // Navigate to page. Wait until there are no oustanding network requests.
       response = await page.goto(requestUrl, {
@@ -164,7 +162,6 @@ export class Renderer {
     } catch (e) {
       console.error(e);
       Sentry.captureException(e);
-      isBrowserError = true;
     }
 
     if (!response) {
@@ -241,7 +238,7 @@ export class Renderer {
     const result = (await page.content()) as string;
 
     await page.close();
-    if (this.config.closeBrowser || isBrowserError) {
+    if (this.config.closeBrowser) {
       await this.browser.close();
     }
     const headers = customHeaders
