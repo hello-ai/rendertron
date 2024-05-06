@@ -14,12 +14,6 @@ RUN apt-get update \
   --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
 
-# https://stackoverflow.com/questions/75251315/dependency-issue-installing-google-chrome-stable-through-ubuntu-docker
-RUN wget --no-check-certificate --no-verbose http://archive.ubuntu.com/ubuntu/pool/main/libu/libu2f-host/libu2f-udev_1.1.4-1_all.deb \
-  && apt update \
-  && apt install -y ./libu2f-udev_1.1.4-1_all.deb \
-  && rm ./libu2f-udev_1.1.4-1_all.deb
-
 # If running Docker >= 1.13.0 use docker run's --init arg to reap zombie processes, otherwise
 # uncomment the following lines to have `dumb-init` as PID 1
 # ADD https://github.com/Yelp/dumb-init/releases/download/v1.2.0/dumb-init_1.2.0_amd64 /usr/local/bin/dumb-init
