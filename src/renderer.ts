@@ -133,6 +133,16 @@ export class Renderer {
         return interceptedRequest.abort();
       }
 
+      // 画像の場合、abort() すると、react-native-web の挙動により、img tag が render されない
+      // そのため、何かしらの画像をロードする
+      // https://hello-ai.slack.com/archives/C04QZ9XQJSU/p1716192753079309?thread_ts=1716188423.698889&cid=C04QZ9XQJSU
+      if (interceptedRequest.resourceType() === 'image') {
+        // 画像はサイズが小さくURLが安定していればなんでも良いが、ここでは favicon.ico を使う
+        return interceptedRequest.continue(
+          { url: 'https://autoreserve.com/favicon.ico' }
+        );
+      }
+
       // https://developer.chrome.com/docs/puppeteer/ssr/#optimizations
       const allowlist = ['document', 'script', 'xhr', 'fetch', 'other'];
       if (!allowlist.includes(interceptedRequest.resourceType())) {
