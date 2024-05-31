@@ -244,17 +244,6 @@ export class Renderer {
       `${dirname(parsedUrl.pathname || '')}`
     );
 
-    const title = await page.title();
-
-    // レストランページでタイトルが初期状態 `AutoReserve` のままのとき rendering がミスってるので、500エラーを返す
-    if ((/\/[a-z]{2}(-[a-z]{2})?\/restaurants\/[a-zA-Z0-9]+$/).test(parsedUrl.pathname ?? '') && statusCode === 200 && title === 'AutoReserve') {
-      return {
-        status: 500,
-        customHeaders: new Map(),
-        content: ''
-      }
-    }
-
     // Serialize page.
     const result = (await page.content()) as string;
 
@@ -262,7 +251,6 @@ export class Renderer {
     if (this.config.closeBrowser) {
       await this.browser.close();
     }
-
     const headers = customHeaders
       ? new Map(JSON.parse(customHeaders))
       : new Map();
