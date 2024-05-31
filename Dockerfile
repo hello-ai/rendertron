@@ -49,7 +49,7 @@ RUN wget --no-check-certificate --no-verbose http://archive.ubuntu.com/ubuntu/po
   && rm ./libu2f-udev_1.1.4-1_all.deb
 
 # WORKAROUND: https://github.com/CircleCI-Public/browser-tools-orb/issues/75#issuecomment-1640923560
-ARG CHROME_VERSION="current"
+ARG CHROME_VERSION="125.0.6422.140"
 RUN wget --no-check-certificate --no-verbose -O /tmp/chrome.deb https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${CHROME_VERSION}_amd64.deb \
   && apt install -y /tmp/chrome.deb \
   && rm /tmp/chrome.deb
