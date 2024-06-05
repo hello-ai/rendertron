@@ -163,11 +163,14 @@ export class Renderer {
       }
     });
 
+    const parsedUrl = url.parse(requestUrl);
+    const isRestaurantPage = (/\/[a-z]{2}(-[a-z]{2})?\/restaurants\/[a-zA-Z0-9]+$/).test(parsedUrl.pathname ?? '')
+
     try {
       // Navigate to page. Wait until there are no oustanding network requests.
       response = await page.goto(requestUrl, {
         timeout: this.config.timeout,
-        waitUntil: 'networkidle2',
+        waitUntil: isRestaurantPage ? 'networkidle2' : 'networkidle0',
       });
     } catch (e) {
       console.error(e);
@@ -237,7 +240,6 @@ export class Renderer {
     // Remove script & import tags.
     await page.evaluate(stripPage);
     // Inject <base> tag with the origin of the request (ie. no path).
-    const parsedUrl = url.parse(requestUrl);
     await page.evaluate(
       injectBaseHref,
       `${parsedUrl.protocol}//${parsedUrl.host}`,
@@ -253,8 +255,8 @@ export class Renderer {
       await this.browser.close();
     }
 
-    // レストランページでタイトルが初期状態 `AutoReserve` のままのとき rendering がミスってるので、500エラーを返す
-    if ((/\/[a-z]{2}(-[a-z]{2})?\/restaurants\/[a-zA-Z0-9]+$/).test(parsedUrl.pathname ?? '') && statusCode === 200 && result.includes('<title>AutoReserve</title>')) {
+    // タイトルが初期状態 `AutoReserve` のままのとき rendering がミスってるので、500エラーを返す
+    if (statusCode === 200 && result.includes('<title>AutoReserve</title>')) {
       return {
         status: 500,
         customHeaders: new Map(),
