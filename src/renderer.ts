@@ -3,7 +3,6 @@ import url from 'url';
 import { dirname } from 'path';
 
 import { Config } from './config';
-import * as Sentry from '@sentry/node';
 
 type SerializedResponse = {
   status: number;
