@@ -174,7 +174,6 @@ export class Renderer {
       });
     } catch (e) {
       console.error(e);
-      Sentry.captureException(e);
     }
 
     if (!response) {
