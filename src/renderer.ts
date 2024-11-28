@@ -143,7 +143,8 @@ export class Renderer {
       }
 
       // https://developer.chrome.com/docs/puppeteer/ssr/#optimizations
-      const allowlist = ['document', 'script', 'xhr', 'fetch', 'other'];
+      // Next.js でエラーが起きるため stylesheet は許可する
+      const allowlist = ['document', 'script', 'xhr', 'fetch', 'stylesheet', 'other'];
       if (!allowlist.includes(interceptedRequest.resourceType())) {
         return interceptedRequest.abort();
       }
