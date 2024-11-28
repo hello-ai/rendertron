@@ -41,6 +41,11 @@
     "--use-mock-keychain",
     "--single-process"
   ],
-  "renderOnly": ["https://autoreserve.com", "https://staging.autoreserve.com", "https://auto-reserve-"],
+  "renderOnly": [
+    "https://autoreserve.com",
+    "https://staging.autoreserve.com",
+    "https://auto-reserve-",
+    "https://list-knowing-companion-feeding.trycloudflare.com"
+  ],
   "restrictedUrlPattern": "(www\\.googletagmanager\\.com|www\\.google-analytics\\.com|static\\.cloudflareinsights\\.com|sentry\\.io)"
 }
